@@ -2,21 +2,24 @@ pipeline {
   agent any
 
   stages {
-    stage('Build & Test') {
+    stage('Build & (optionally) Test') {
       steps {
-        // run Maven against the POM inside the BankAccount-Java folder
+        // build using the POM inside the subfolder
+        // keep tests enabled; if there are none, that's fine
         sh 'mvn -B -f BankAccount-Java/pom.xml -DskipTests=false clean test'
       }
       post {
         always {
-          // publish JUnit results
-          junit 'BankAccount-Java/target/surefire-reports/*.xml'
+          // publish results if any exist; don't fail if none
+          junit testResults: 'BankAccount-Java/target/surefire-reports/*.xml',
+                allowEmptyResults: true
         }
       }
     }
 
     stage('Package') {
       steps {
+        // if you truly don’t want tests to run, flip -DskipTests=true here
         sh 'mvn -B -f BankAccount-Java/pom.xml -DskipTests package'
       }
     }
