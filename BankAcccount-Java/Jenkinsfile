@@ -1,0 +1,31 @@
+pipeline {
+  agent any
+  tools { jdk 'JDK 17' }   // or omit if using system Java
+  options { skipDefaultCheckout(true) }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout([$class: 'GitSCM',
+          userRemoteConfigs: [[url: 'https://github.com/<you>/<repo>.git']],
+          branches: [[name: '*/main']]
+        ])
+      }
+    }
+    stage('Build & Test') {
+      steps {
+        sh 'chmod +x gradlew'
+        sh './gradlew clean test build'
+      }
+      post {
+        always {
+          junit 'build/test-results/test/*.xml'
+        }
+      }
+    }
+    stage('Archive') {
+      steps {
+        archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
+      }
+    }
+  }
+}
