@@ -1,6 +1,9 @@
 pipeline {
   agent any
-  tools { jdk 'JDK 17' }   // or omit if using system Java
+  tools {
+    jdk 'JDK 17'        // name from Manage Jenkins → Tools (or remove if using system Java)
+    maven 'maven3'      // name from Manage Jenkins → Tools
+  }
   options { skipDefaultCheckout(true) }
   stages {
     stage('Checkout') {
@@ -13,18 +16,22 @@ pipeline {
     }
     stage('Build & Test') {
       steps {
-        sh 'chmod +x gradlew'
-        sh './gradlew clean test build'
+        sh 'mvn -B -DskipTests=false clean test'
       }
       post {
         always {
-          junit 'build/test-results/test/*.xml'
+          junit 'target/surefire-reports/*.xml'
         }
+      }
+    }
+    stage('Package') {
+      steps {
+        sh 'mvn -B -DskipTests package'
       }
     }
     stage('Archive') {
       steps {
-        archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
+        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
       }
     }
   }
